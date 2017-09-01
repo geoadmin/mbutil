@@ -15,8 +15,12 @@ Git checkout (requires git)
 
     git clone git://github.com/mapbox/mbutil.git
     cd mbutil
+    virtualenv  --no-site-packages .venv
+    .venv/bin/pip install -U pip setuptools
+    .venv/bin/pip install -r requirements.txt
     # get usage
-    ./mb-util -h
+    .venv/bin/python mb-util -h
+
 
 Then to install the mb-util command globally:
 

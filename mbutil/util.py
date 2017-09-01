@@ -11,6 +11,8 @@
 
 import sqlite3, sys, logging, time, os, json, zlib, re
 
+from s3 import init_connection, save_to_s3
+
 logger = logging.getLogger(__name__)
 
 def flip_y(zoom, y):
@@ -277,20 +279,32 @@ def mbtiles_metadata_to_disk(mbtiles_file, **kwargs):
     if not silent:
         logger.debug(json.dumps(metadata, indent=2))
 
+def mbtiles_to_s3(mbtiles_file, **kwargs):
+    return _mbtiles_to(mbtiles_file, kwargs.get('s3path'), 's3', **kwargs)
+    
 def mbtiles_to_disk(mbtiles_file, directory_path, **kwargs):
+    return _mbtiles_to(mbtiles_file, directory_path, 'disk', **kwargs)
+
+def _mbtiles_to(mbtiles_file, directory_path, target, **kwargs):
+    s3 = (target == 's3')
+    if s3:
+        init_connection(kwargs.get('s3bucket'), 'ltjeg_aws_admin')
     silent = kwargs.get('silent')
     if not silent:
-        logger.debug("Exporting MBTiles to disk")
-        logger.debug("%s --> %s" % (mbtiles_file, directory_path))
+        logger.debug("Exporting MBTiles to " + target)
+        logger.debug("%s --> %s" % (mbtiles_file, directory_path if not s3 else kwargs.get('s3bucket')))
     con = mbtiles_connect(mbtiles_file, silent)
-    os.mkdir("%s" % directory_path)
     metadata = dict(con.execute('select name, value from metadata;').fetchall())
-    json.dump(metadata, open(os.path.join(directory_path, 'metadata.json'), 'w'), indent=4)
+    base_path = directory_path
+    if not s3:
+        os.mkdir("%s" % directory_path)
+        json.dump(metadata, open(os.path.join(directory_path, 'metadata.json'), 'w'), indent=4)
+    else:
+        save_to_s3(json.dumps(metadata, indent=4), base_path + 'metadata.json', kwargs.get('s3bucket'), False)
     count = con.execute('select count(zoom_level) from tiles;').fetchone()[0]
     done = 0
     msg = ''
-    base_path = directory_path
-    if not os.path.isdir(base_path):
+    if not s3 and not os.path.isdir(base_path):
         os.makedirs(base_path)
 
     # if interactivity
@@ -298,7 +312,10 @@ def mbtiles_to_disk(mbtiles_file, directory_path, **kwargs):
     if formatter:
         layer_json = os.path.join(base_path, 'layer.json')
         formatter_json = {"formatter":formatter}
-        open(layer_json, 'w').write(json.dumps(formatter_json))
+        if not s3:
+            open(layer_json, 'w').write(json.dumps(formatter_json))
+        else:
+            save_to_s3(json.dumps(formatter_json, indent=4), base_path + 'layer.json', kwargs.get('s3bucket'), False)
 
     tiles = con.execute('select zoom_level, tile_column, tile_row, tile_data from tiles;')
     t = tiles.fetchone()
@@ -321,15 +338,18 @@ def mbtiles_to_disk(mbtiles_file, directory_path, **kwargs):
                 "%03d" % ((int(y) / 1000) % 1000))
         else:
             tile_dir = os.path.join(base_path, str(z), str(x))
-        if not os.path.isdir(tile_dir):
+        if not s3 and not os.path.isdir(tile_dir):
             os.makedirs(tile_dir)
         if kwargs.get('scheme') == 'wms':
             tile = os.path.join(tile_dir,'%03d.%s' % (int(y) % 1000, kwargs.get('format', 'png')))
         else:
             tile = os.path.join(tile_dir,'%s.%s' % (y, kwargs.get('format', 'png')))
-        f = open(tile, 'wb')
-        f.write(t[3])
-        f.close()
+        if not s3:
+            f = open(tile, 'wb')
+            f.write(t[3])
+            f.close()
+        else:
+            save_to_s3(t[3], tile, kwargs.get('s3bucket'))
         done = done + 1
         for c in msg: sys.stdout.write(chr(8))
         if not silent:
@@ -358,10 +378,9 @@ def mbtiles_to_disk(mbtiles_file, directory_path, **kwargs):
         if kwargs.get('scheme') == 'xyz':
             y = flip_y(zoom_level,y)
         grid_dir = os.path.join(base_path, str(zoom_level), str(tile_column))
-        if not os.path.isdir(grid_dir):
+        if not s3 and not os.path.isdir(grid_dir):
             os.makedirs(grid_dir)
         grid = os.path.join(grid_dir,'%s.grid.json' % (y))
-        f = open(grid, 'w')
         grid_json = json.loads(zlib.decompress(g[3]).decode('utf-8'))
         # join up with the grid 'data' which is in pieces when stored in mbtiles file
         grid_data = grid_data_cursor.fetchone()
@@ -370,11 +389,15 @@ def mbtiles_to_disk(mbtiles_file, directory_path, **kwargs):
             data[grid_data[0]] = json.loads(grid_data[1])
             grid_data = grid_data_cursor.fetchone()
         grid_json['data'] = data
-        if callback in (None, "", "false", "null"):
-            f.write(json.dumps(grid_json))
+        if not s3:
+            f = open(grid, 'w')
+            if callback in (None, "", "false", "null"):
+                f.write(json.dumps(grid_json))
+            else:
+                f.write('%s(%s);' % (callback, json.dumps(grid_json)))
+            f.close()
         else:
-            f.write('%s(%s);' % (callback, json.dumps(grid_json)))
-        f.close()
+            save_to_s3(json.dumps(grid_json, indent=4), grid, kwargs.get('s3bucket'), False)
         done = done + 1
         for c in msg: sys.stdout.write(chr(8))
         if not silent:

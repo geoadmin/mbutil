@@ -10,11 +10,11 @@
 import logging, os, sys
 from optparse import OptionParser
 
-from mbutil import mbtiles_to_disk, disk_to_mbtiles, mbtiles_metadata_to_disk
+from mbutil import mbtiles_to_disk, mbtiles_to_s3, disk_to_mbtiles, mbtiles_metadata_to_disk
 
 if __name__ == '__main__':
 
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.WARNING)
 
     parser = OptionParser(usage="""usage: %prog [options] input output
     
@@ -25,9 +25,22 @@ if __name__ == '__main__':
 
     Export an mbtiles file to a directory of files:
     $ mb-util world.mbtiles tiles # tiles must not already exist
+
+    Extranct and uppload an mbtiles file to an s3 bucket, needs --s3bucket and --s3path parameters
+    @ mb-utile world.mbtiles s3
     
     Import a directory of tiles into an mbtiles file:
     $ mb-util tiles world.mbtiles # mbtiles file must not already exist""")
+
+    parser.add_option('--s3bucket', dest='s3bucket',
+        help='S3 Bucket to write to',
+        type='string',
+        action='store')
+
+    parser.add_option('--s3path', dest='s3path',
+        help='Path in S3 bucket',
+        type='string',
+        action='store')
     
     parser.add_option('--scheme', dest='scheme',
         help='''Tiling scheme of the tiles. Default is "xyz" (z/x/y), other options '''
@@ -69,13 +82,18 @@ if __name__ == '__main__':
         sys.stderr.write('To export MBTiles to disk, specify a directory that does not yet exist\n')
         sys.exit(1)
     
+    # to s3
+    if os.path.isfile(args[0]) and args[1]=="s3":
+        mbtiles_file, s3 = args
+        mbtiles_to_s3(mbtiles_file, **options.__dict__)
+       
     # to disk
     if os.path.isfile(args[0]) and args[1]=="dumps":
         mbtiles_file, dumps = args
         mbtiles_metadata_to_disk(mbtiles_file, **options.__dict__)
         sys.exit(1)
 
-    if os.path.isfile(args[0]) and not os.path.exists(args[1]):
+    if os.path.isfile(args[0]) and args[1] != "s3" and not os.path.exists(args[1]):
         mbtiles_file, directory_path = args
         mbtiles_to_disk(mbtiles_file, directory_path, **options.__dict__)
 
