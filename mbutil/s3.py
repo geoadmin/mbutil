@@ -26,13 +26,14 @@ mimetypes.add_type('application/vnd.ms-fontobject', '.eot')
 mimetypes.add_type('application/json; charset=utf-8', '.json')
 mimetypes.add_type('text/cache-manifest', '.appcache')
 mimetypes.add_type('text/plain', '.txt')
+mimetypes.add_type('image/png', '.png')
+mimetypes.add_type('image/jpeg', '.jpeg')
 
 IS_COMPRESSED = [
 	'application/x-protobuf'
 ]
 
 NO_COMPRESS = [
-    'image/png',
     'image/jpeg',
     'image/x-icon',
     'image/vnd.microsoft.icon',
@@ -86,9 +87,8 @@ def save_to_s3(in_data, dest, bucket_name, compress=True, cached=True):
     if compress and mimetype in IS_COMPRESSED:
         compressed = True
  
-
-	if compressed == True:
-	    content_encoding = 'gzip'
+    if compressed == True:
+        content_encoding = 'gzip'
 
     if cached is False:
         cache_control = 'max-age=0, must-revalidate, s-maxage=900'
