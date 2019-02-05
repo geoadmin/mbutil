@@ -288,7 +288,7 @@ def mbtiles_to_disk(mbtiles_file, directory_path, **kwargs):
 def _mbtiles_to(mbtiles_file, directory_path, target, **kwargs):
     s3 = (target == 's3')
     if s3:
-        profile=os.environ['AWS_PROFILE_NAME'] if os.environ['AWS_PROFILE_NAME'] != '' else 'default'
+        profile=kwargs.get('profile')
         init_connection(kwargs.get('s3bucket'), profile)
     silent = kwargs.get('silent')
     if not silent:
