@@ -288,7 +288,8 @@ def mbtiles_to_disk(mbtiles_file, directory_path, **kwargs):
 def _mbtiles_to(mbtiles_file, directory_path, target, **kwargs):
     s3 = (target == 's3')
     if s3:
-        init_connection(kwargs.get('s3bucket'), 'ltjeg_aws_admin')
+        profile=kwargs.get('profile')
+        init_connection(kwargs.get('s3bucket'), profile)
     silent = kwargs.get('silent')
     if not silent:
         logger.debug("Exporting MBTiles to " + target)
