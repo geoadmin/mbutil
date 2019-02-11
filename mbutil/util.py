@@ -299,7 +299,7 @@ def _mbtiles_to(mbtiles_file, directory_path, target, **kwargs):
     base_path = directory_path
     if not s3:
         os.mkdir("%s" % directory_path)
-        json.dump(metadata, open(os.path.join(directory_path, 'metadata.json'), 'w'), indent=4)
+        json.dump(metadata, open(os.path.join(directory_path, '.json'), 'w'), indent=4)
     else:
         save_to_s3(json.dumps(metadata, indent=4), base_path + 'metadata.json', kwargs.get('s3bucket'), False)
     count = con.execute('select count(zoom_level) from tiles;').fetchone()[0]
