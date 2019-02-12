@@ -301,7 +301,7 @@ def _mbtiles_to(mbtiles_file, directory_path, target, **kwargs):
         os.mkdir("%s" % directory_path)
         json.dump(metadata, open(os.path.join(directory_path, '.json'), 'w'), indent=4)
     else:
-        save_to_s3(json.dumps(metadata, indent=4), base_path + 'metadata.json', kwargs.get('s3bucket'), False)
+        save_to_s3(json.dumps(metadata, indent=4), base_path + '.json', kwargs.get('s3bucket'), False)
     count = con.execute('select count(zoom_level) from tiles;').fetchone()[0]
     done = 0
     msg = ''
@@ -350,7 +350,7 @@ def _mbtiles_to(mbtiles_file, directory_path, target, **kwargs):
             f.write(t[3])
             f.close()
         else:
-            save_to_s3(t[3], tile, kwargs.get('s3bucket'))
+            save_to_s3(t[3], tile, kwargs.get('s3bucket'), kwargs.get('compression'), True)
         done = done + 1
         for c in msg: sys.stdout.write(chr(8))
         if not silent:

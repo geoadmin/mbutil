@@ -88,7 +88,7 @@ def save_to_s3(in_data, dest, bucket_name, compress=True, cached=True):
         compressed = True
  
     if compressed == True:
-        content_encoding = 'gzip'
+        extra_args['ContentEncoding'] = 'gzip' if compressed is True else None
 
     if cached is False:
         cache_control = 'max-age=0, must-revalidate, s-maxage=900'
@@ -96,16 +96,13 @@ def save_to_s3(in_data, dest, bucket_name, compress=True, cached=True):
     #extra_args['ACL'] = 'public-read'
     extra_args['ContentType'] = mimetype
     extra_args['CacheControl'] = cache_control
-
+    
     try:
         logger.info('Uploading to %s - %s, gzip: %s, cache headers: %s' % (dest, mimetype, compressed, cached))
-        if compressed:
-            extra_args['ContentEncoding'] = content_encoding
 
         if cached is False:
             extra_args['Expires'] = datetime(1990, 1, 1)
             extra_args['Metadata'] = {'Pragma': 'no-cache', 'Vary': '*'}
-
         s3.Object(bucket_name, dest).put(Body=data, **extra_args)
     except Exception as e:
         print('Error while uploading %s: %s' % (dest, e))
