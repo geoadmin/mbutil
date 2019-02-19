@@ -2,3 +2,4 @@ boto3==1.4.1
 botocore==1.4.70
 shapely==1.6.0
 gatilegrid==0.1.3
+numpy==1.16.1
