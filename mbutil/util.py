@@ -299,9 +299,35 @@ def _mbtiles_to(mbtiles_file, directory_path, target, **kwargs):
     base_path = directory_path
     if not s3:
         os.mkdir("%s" % directory_path)
-        json.dump(metadata, open(os.path.join(directory_path, '.json'), 'w'), indent=4)
+        json.dump(metadata, open(os.path.join(directory_path, 'metadata.json'), 'w'), indent=4)
+        
     else:
-        save_to_s3(json.dumps(metadata, indent=4), base_path + '.json', kwargs.get('s3bucket'), False)
+        tileset_json={}
+        if kwargs.get('urls'):
+            tileset_json['tiles']=kwargs.get('urls').split(",")
+        tileset_json['tilejson']="2.0.0"
+        for key, value in metadata.iteritems():
+            import numpy
+            if key == "json":
+                internal_json=json.loads(value.encode('utf-8'))
+                for k, v in internal_json.iteritems():
+                    tileset_json[k]=v
+            elif key == "bounds" or key == "center":
+                v = numpy.fromstring(str(value.encode('utf-8')), dtype=numpy.float, sep=',')
+                lst=[]
+                for idx, val in enumerate(v):
+                    lst.append(v.item(idx))
+                if key == "center":
+                    lst[2]=int(lst[2])
+                tileset_json[key]=lst
+            elif key == "minzoom" or key == "maxzoom":
+                tileset_json[key]=int(float(value.encode('utf-8')))
+            else :
+                tileset_json[key]=str(value).encode('utf-8')
+#            tileset_json['tiles']='[PLEASE_REPLACE_ME_WITH_URL_LIST]'
+        save_to_s3(json.dumps(tileset_json, indent=4), base_path + '.json', kwargs.get('s3bucket'), False)
+        if kwargs.get('tilejson_only'):
+            sys.exit(1)
     count = con.execute('select count(zoom_level) from tiles;').fetchone()[0]
     done = 0
     msg = ''
