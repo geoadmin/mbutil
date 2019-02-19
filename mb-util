@@ -37,6 +37,16 @@ if __name__ == '__main__':
         type='string',
         action='store')
 
+    parser.add_option('--urls', dest='urls',
+        help='The urls where the tiles will be available, separated by commas (example : url.a.b.com,url.c.d.com',
+        type='string',
+        action='store')
+
+    parser.add_option('--tilejson_only', dest='tilejson_only',
+        help='If this option is present, we will generate (and store) only the tileJSON.',
+        action='store_true',
+        default=False)
+
     parser.add_option('--s3path', dest='s3path',
         help='Path in S3 bucket',
         type='string',

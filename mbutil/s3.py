@@ -63,12 +63,8 @@ def _unzip_data(compressed):
     f = gzip.GzipFile(mode='rb', fileobj=inbuffer)
     try:
         data = f.read()
-        print 'yeah, yea'
     finally:
-        print 'yeah'
         f.close()
-
-    print 'we did it'
     return data
 
 
@@ -79,6 +75,7 @@ def save_to_s3(in_data, dest, bucket_name, compress=True, cached=True):
     content_encoding = None
     cache_control = 'max-age=1800, public'
     extra_args = {}
+    
 
     if compress and mimetype not in NO_COMPRESS:
         data = _gzip_data(in_data)
@@ -103,10 +100,13 @@ def save_to_s3(in_data, dest, bucket_name, compress=True, cached=True):
         if cached is False:
             extra_args['Expires'] = datetime(1990, 1, 1)
             extra_args['Metadata'] = {'Pragma': 'no-cache', 'Vary': '*'}
+        print(dest)
+        if not isinstance(data, type(b'')):
+          data = _unzip_data(data)
         s3.Object(bucket_name, dest).put(Body=data, **extra_args)
     except Exception as e:
         print('Error while uploading %s: %s' % (dest, e))
-
+        sys.exit(1)
 
 def get_file_mimetype(local_file):
     mimetype, _ = mimetypes.guess_type(local_file)
