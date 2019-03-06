@@ -33,33 +33,46 @@ Python installation (requires easy_install)
     easy_install mbutil
     mb-util -h
 
-## Usage
-
-    $ mb-util -h
-    Usage: mb-util [options] input output
-
+Usage: mb-util [options] input output
+    
     Examples:
 
-        Export an mbtiles file to a directory of files:
-        $ mb-util world.mbtiles tiles # tiles must not already exist
+    Export an mbtiles file to a directory of files:
+    $ mb-util world.mbtiles dumps # when the 2nd argument is "dumps", then dumps the metatdata.json
 
-        Import a directory of tiles into an mbtiles file:
-        $ mb-util tiles world.mbtiles # mbtiles file must not already exist
+    Export an mbtiles file to a directory of files:
+    $ mb-util world.mbtiles tiles # tiles must not already exist
 
-    Options:
-      -h, --help            Show this help message and exit
-      --scheme=SCHEME       Tiling scheme of the tiles. Default is "xyz" (z/x/y),
-                            other options are "tms" which is also z/x/y
-                            but uses a flipped y coordinate, and "wms" which replicates
-                            the MapServer WMS TileCache directory structure "z/000/000/x/000/000/y.png"''',
-      --image_format=FORMAT
-                            The format of the image tiles, either png, jpg, webp or pbf
-      --grid_callback=CALLBACK
-                            Option to control JSONP callback for UTFGrid tiles. If
-                            grids are not used as JSONP, you can
-                            remove callbacks specifying --grid_callback=""
-      --do_compression      Do mbtiles compression
-      --silent              Dictate whether the operations should run silentl
+    Extranct and uppload an mbtiles file to an s3 bucket, needs --s3bucket and --s3path parameters
+    @ mb-utile world.mbtiles s3
+    
+    Import a directory of tiles into an mbtiles file:
+    $ mb-util tiles world.mbtiles # mbtiles file must not already exist
+
+Options:
+  -h, --help            show this help message and exit
+  --s3bucket=S3BUCKET   S3 Bucket to write to
+  --urls=URLS           The urls where the tiles will be available, separated
+                        by commas (example : url.a.b.com,url.c.d.com
+  --tilejson_only       If this option is present, we will generate (and
+                        store) only the tileJSON.
+  --s3path=S3PATH       Path in S3 bucket
+  --scheme=SCHEME       Tiling scheme of the tiles. Default is "xyz" (z/x/y),
+                        other options are "tms" which is also z/x/y but uses a
+                        flipped y coordinate, and "wms" which replicates the
+                        MapServer WMS TileCache directory structure
+                        "z/000/000/x/000/000/y.png"
+  --image_format=FORMAT
+                        The format of the image tiles, either png, jpg, webp
+                        or pbf
+  --grid_callback=CALLBACK
+                        Option to control JSONP callback for UTFGrid tiles. If
+                        grids are not used as JSONP, you can remove callbacks
+                        specifying --grid_callback=""
+  --do_compression      Do mbtiles compression
+  --silent              Dictate whether the operations should run silently
+  --profile=PROFILE     The aws profile used to access the S3 bucket
+
 
 
     Export an `mbtiles` file to files on the filesystem:
@@ -70,6 +83,11 @@ Python installation (requires easy_install)
     Import a directory into a `mbtiles` file
 
         mb-util directory World_Light.mbtiles
+
+    Export an 'mbtiles' file to s3
+       
+        mb-util some_osm_tiles.mbtiles s3 --s3bucket="My-Bucket-Name" --s3path="Some/osm/tiles" --image_format="pbf" --scheme="xyz" --profile="your_amazon_profile_with_correct_rights" --urls="https://HOSTNAME1/path/to/resource/z/x/y.pbf,https://HOSTNAME2/another/path/to/resource/or/the/same/z/x/y,.pbf" 
+
 
 ## Requirements
 
