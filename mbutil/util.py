@@ -305,6 +305,8 @@ def _mbtiles_to(mbtiles_file, directory_path, target, **kwargs):
         tileset_json={}
         if kwargs.get('urls'):
             tileset_json['tiles']=kwargs.get('urls').split(",")
+            #TODO: https://[HOST]/[PATH]/{z}/{x}/{y}.pbf
+            #TODO 2: use text file or json file for parameters.
         tileset_json['tilejson']="2.0.0"
         for key, value in metadata.iteritems():
             import numpy
